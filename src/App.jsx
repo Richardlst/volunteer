@@ -14,6 +14,9 @@ import ManageEvents from './pages/manager/ManageEvents'
 import EventRegistrations from './pages/manager/EventRegistrations'
 import ApproveEvents from './pages/admin/ApproveEvents'
 import UserManagement from './pages/admin/UserManagement'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import EventApproval from './pages/admin/EventApproval'
+import VolunteerHistory from './pages/volunteer/VolunteerHistory'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -22,22 +25,30 @@ function App() {
     setUser(null)
   }
 
-  //Uncomment để test với user đã login
+  // Load user from localStorage or API
   React.useEffect(() => {
-    setUser({
-      name: 'Nguyễn Văn A',
-      email: 'user@example.com',
-      role: 'admin',
-    })
+    const token = localStorage.getItem('auth_token')
+    const savedUser = localStorage.getItem('user')
+    
+    if (token && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser)
+        setUser(userData)
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        localStorage.removeItem('user')
+        localStorage.removeItem('auth_token')
+      }
+    }
   }, [])
 
   return (
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
+        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+        <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
 
         {/* Protected routes */}
         <Route
@@ -112,6 +123,18 @@ function App() {
             )
           }
         />
+        <Route
+          path="/volunteer/history"
+          element={
+            user ? (
+              <Layout user={user} onLogout={handleLogout}>
+                <VolunteerHistory />
+              </Layout>
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
 
         {/* Manager routes */}
         <Route
@@ -140,6 +163,26 @@ function App() {
         />
 
         {/* Admin routes */}
+        <Route
+          path="/admin"
+          element={
+            user && user.role === 'admin' ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/admin/events/pending"
+          element={
+            user && user.role === 'admin' ? (
+              <EventApproval />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route
           path="/admin/events"
           element={

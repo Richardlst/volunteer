@@ -7,14 +7,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
 import { StarField } from '../components/canvas/StarField'
 import { FloatingOrbs } from '../components/canvas/FloatingOrbs'
-import { User, Mail, Lock, Heart, ArrowLeft } from 'lucide-react'
+import { User, Mail, Lock, Heart, ArrowLeft, AlertCircle, Phone, Users } from 'lucide-react'
+import { authRepository } from '../services/repositories/authRepository'
 
 function Register() {
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     password: '',
+    phoneNumber: '',
+    role: 'volunteer', // default role
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -24,9 +30,25 @@ function Register() {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate('/dashboard')
+    setError('')
+    setLoading(true)
+
+    try {
+      const response = await authRepository.register(formData)
+      setSuccess(true)
+      
+      // Auto-login successful, redirect to home after 1 second
+      setTimeout(() => {
+        navigate('/')
+      }, 1000)
+    } catch (err) {
+      console.error('Registration error:', err)
+      setError(err.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -56,6 +78,20 @@ function Register() {
         <div className="glass p-8 rounded-3xl border border-blue-400/30 shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-6 text-center">Đăng ký tài khoản</h2>
           
+          {error && (
+            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-200 text-sm">{error}</p>
+            </div>
+          )}
+          
+          {success && (
+            <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl flex items-start gap-3">
+              <Heart className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+              <p className="text-green-200 text-sm">Đăng ký thành công! Đang chuyển đến trang chủ...</p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="text-sm font-medium text-blue-200 mb-2 block">Họ và tên</label>
@@ -63,9 +99,9 @@ function Register() {
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
                 <input
                   type="text"
-                  name="name"
+                  name="fullName"
                   placeholder="Nguyễn Văn A"
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
                   className="w-full pl-11 pr-4 py-3 bg-blue-950/30 border border-blue-400/30 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
@@ -90,6 +126,48 @@ function Register() {
             </div>
             
             <div>
+              <label className="text-sm font-medium text-blue-200 mb-2 block">Số điện thoại</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
+                <input
+                  type="tel"
+                  name="phoneNumber"
+                  placeholder="0123456789"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  pattern="[0-9]{10}"
+                  className="w-full pl-11 pr-4 py-3 bg-blue-950/30 border border-blue-400/30 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-blue-200 mb-2 block">Vai trò</label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full pl-11 pr-4 py-3 bg-blue-950/30 border border-blue-400/30 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="volunteer">Tình nguyện viên - Tham gia hoạt động</option>
+                  <option value="manager">Quản lý sự kiện - Tạo và quản lý sự kiện</option>
+                  <option value="admin">Quản trị viên - Quản lý toàn bộ hệ thống</option>
+                </select>
+              </div>
+              <p className="text-xs text-blue-300/60 mt-2 ml-1">
+                {formData.role === 'volunteer' 
+                  ? '🙋 Tham gia các hoạt động tình nguyện' 
+                  : formData.role === 'manager' 
+                    ? '🎯 Tạo và quản lý các sự kiện tình nguyện' 
+                    : '🔑 Quản lý toàn bộ hệ thống'}
+              </p>
+            </div>
+            
+            <div>
               <label className="text-sm font-medium text-blue-200 mb-2 block">Mật khẩu</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
@@ -99,6 +177,7 @@ function Register() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
+                  minLength="6"
                   className="w-full pl-11 pr-4 py-3 bg-blue-950/30 border border-blue-400/30 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
@@ -126,10 +205,11 @@ function Register() {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-xl shadow-blue-500/50 py-3 text-base"
+              disabled={loading || success}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-xl shadow-blue-500/50 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Heart className="w-5 h-5 mr-2" />
-              Tạo tài khoản
+              {!loading && !success && <Heart className="w-5 h-5 mr-2" />}
+              {loading ? 'Đang đăng ký...' : success ? 'Đăng ký thành công!' : 'Tạo tài khoản'}
             </Button>
 
             <div className="text-center text-sm">

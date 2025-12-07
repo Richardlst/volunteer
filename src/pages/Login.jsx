@@ -9,16 +9,36 @@ import { Input } from '../components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { StarField } from '../components/canvas/StarField'
 import { FloatingOrbs } from '../components/canvas/FloatingOrbs'
-import { Mail, Lock, Heart, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Mail, Lock, Heart, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react'
+import { authRepository } from '../services/repositories/authRepository'
 
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    navigate('/dashboard')
+    setError('')
+    setLoading(true)
+
+    try {
+      const response = await authRepository.login({ email, password })
+      
+      // Login successful - authRepository already saved token and user
+      // Just navigate to home page
+      navigate('/')
+      
+      // Reload to update user state
+      window.location.reload()
+    } catch (err) {
+      console.error('Login error:', err)
+      setError(err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -47,6 +67,13 @@ function Login() {
         {/* Login Card */}
         <div className="glass p-8 rounded-3xl border border-blue-400/30 shadow-2xl">
           <h2 className="text-2xl font-bold text-white mb-6 text-center">Đăng nhập</h2>
+          
+          {error && (
+            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-200 text-sm">{error}</p>
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -91,10 +118,11 @@ function Login() {
 
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-xl shadow-blue-500/50 py-3 text-base"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-xl shadow-blue-500/50 py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Đăng nhập
-              <ArrowRight className="w-5 h-5 ml-2" />
+              {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {!loading && <ArrowRight className="w-5 h-5 ml-2" />}
             </Button>
 
             <div className="relative my-6">

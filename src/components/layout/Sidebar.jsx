@@ -27,11 +27,12 @@ function Sidebar({ user }) {
       ]
     }
 
-    if (user?.role === 'manager') {
+    if (user?.role === 'manager' || user?.role === 'organizer') {
       return [
         ...baseItems,
         { icon: FileText, label: 'Quản lý sự kiện', path: '/manager/events' },
         { icon: CheckSquare, label: 'Duyệt đăng ký', path: '/manager/registrations' },
+        { icon: Bell, label: 'Thông báo', path: '/notifications' },
         { icon: Settings, label: 'Cài đặt', path: '/settings' },
       ]
     }
@@ -39,8 +40,9 @@ function Sidebar({ user }) {
     if (user?.role === 'admin') {
       return [
         ...baseItems,
-        { icon: Shield, label: 'Duyệt sự kiện', path: '/admin/events' },
+        { icon: Shield, label: 'Duyệt sự kiện', path: '/admin/events/pending' },
         { icon: UserCog, label: 'Quản lý user', path: '/admin/users' },
+        { icon: Bell, label: 'Thông báo', path: '/notifications' },
         { icon: Settings, label: 'Cài đặt', path: '/settings' },
       ]
     }
